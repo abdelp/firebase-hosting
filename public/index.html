@@ -19,19 +19,16 @@
     <h1 id="hotDogOutput">Hot dog status:</h1>
     <input type="textfield" id="latestHotDogStatus"/>
     <button id="saveButton">Save</button>
-    <script src="js/index.js"></script>
     
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         try {
           let app = firebase.app();
-          let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
-          document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
         } catch (e) {
           console.error(e);
-          document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
         }
       });
     </script>
+    <script src="js/index.js"></script>
   </body>
 </html>
