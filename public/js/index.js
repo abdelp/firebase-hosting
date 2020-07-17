@@ -29,3 +29,15 @@ loadButton.addEventListener('click', () => {
     console.log(`Got an error: ${error}`);
   });
 });
+
+getRealtimeUpdates = () => {
+  docRef.onSnapshot({includeMetadataChanges: true}, doc => {
+    if (doc && doc.exists) {
+      console.log(doc);
+      const myData = doc.data();
+      outputHeader.innerHTML = `Hot dog status: ${myData.hotDogStatus}`
+    }
+  });
+}
+
+getRealtimeUpdates();
