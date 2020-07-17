@@ -7,7 +7,7 @@ const loadButton = document.querySelector('#loadButton');
 
 const docRef = firestore.doc('samples/sandwichData');
 
-saveButton.addEventListener('click', function() {
+saveButton.addEventListener('click', () => {
   const textToSave = inputTextField.value;
   console.log(`I'm going to save ${textToSave} to Firestore`);
   docRef.set({
