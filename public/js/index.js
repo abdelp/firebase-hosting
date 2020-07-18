@@ -1,43 +1,111 @@
 let firestore = firebase.firestore();
+const collRef = firestore.collection('books/');
 
-const outputHeader = document.querySelector('#hotDogOutput');
-const inputTextField = document.querySelector('#latestHotDogStatus');
-const saveButton = document.querySelector('#saveButton');
-const loadButton = document.querySelector('#loadButton');
+function Book(author, title, noPages, read) {
+  this.author = author;
+  this.title = title;
+  this.noPages = noPages;
+  this.read = read;
+}
 
-const docRef = firestore.doc('samples/sandwichData');
+let myLibrary = [];
 
-saveButton.addEventListener('click', () => {
-  const textToSave = inputTextField.value;
-  console.log(`I'm going to save ${textToSave} to Firestore`);
-  docRef.set({
-    hotDogStatus: textToSave
-  }).then(()=> {
-    console.log("Status saved!");
-  }).catch(error => {
-    console.log("Got an error: ", error);
-  });
-});
+const cleanForm = () => {
+  let form = document.getElementById("book-form");
+  form.reset();
+}
 
-loadButton.addEventListener('click', () => {
-  docRef.get().then(doc => {
-    if (doc && doc.exists) {
-      const myData = doc.data();
-      outputHeader.innerHTML = `Hot dog status: ${myData.hotDogStatus}`
-    }
-  }).catch(error => {
-    console.log(`Got an error: ${error}`);
-  });
-});
+function render() {
+  const booksContainer = document.getElementById('books-container');
+  booksContainer.innerHTML = '';
+  myLibrary.forEach((book, idx) => {
+    const card = document.createElement('div');
+    const read = book.read ? 'Yes' : 'No';
+    const bookClass = book.read ? 'btn btn-success' : 'btn btn-danger';
 
-getRealtimeUpdates = () => {
-  docRef.onSnapshot({includeMetadataChanges: true}, doc => {
-    if (doc && doc.exists) {
-      console.log(doc);
-      const myData = doc.data();
-      outputHeader.innerHTML = `Hot dog status: ${myData.hotDogStatus}`
-    }
+    card.id = `book-${idx}`;
+    card.className = 'card mt-3 mb-3 col-xs-12 col-sm-12 col-md-6 col-lg-3';
+    card.innerHTML = `<div class='card-body'><h5 class='card-title'>${book.title}</h5> <p class="card-text"><span class="font-weight-bold text-secondary">Written by:</span> ${book.author}</p>
+  <p class="card-text"><span class="font-weight-bold text-secondary">Pages:</span> ${book.noPages}</p>
+  <p class="card-text"><span class="font-weight-bold text-secondary">Read:</span> <button class="${bookClass}" onclick="changeReadStatus(this, ${idx})">${read}</button></p>
+  <div class="btn btn-danger" onclick="removeBookFromLibrary(${idx})" data-toggle="confirmation">Remove</div>
+  </div>`;
+    booksContainer.appendChild(card);
   });
 }
 
-getRealtimeUpdates();
+function addBookToLibrary() { // eslint-disable-line no-unused-vars
+  const author = document.getElementById('book-author').value;
+  const title = document.getElementById('book-title').value;
+  const noPages = document.getElementById('book-no-pages').value;
+  const read = document.getElementById('book-read').checked;
+
+  const book = new Book(author, title, noPages, read);
+
+  myLibrary.push(book);
+
+  collRef.add({
+    title,
+    author,
+    noPages,
+    read
+  })
+  .then(() => {
+    console.log("Document successfully written!");
+  })
+  .catch(error => {
+    console.error("Error writing document: ", error);
+  });
+
+  cleanForm();
+  render();
+}
+
+function removeBookFromLibrary(idx) { // eslint-disable-line no-unused-vars
+  const removeBook = window.confirm('Are you sure?'); // eslint-disable-line no-alert
+
+  if (removeBook) {
+    const firstPart = myLibrary.slice(0, idx);
+    const secondPart = myLibrary.slice(idx + 1, myLibrary.length);
+
+    myLibrary = firstPart.concat(secondPart);
+    localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
+
+    // alert('Book removed successfully');
+
+    render();
+  }
+}
+
+function changeReadStatus(el, idx) { // eslint-disable-line no-unused-vars
+  const book = myLibrary[idx];
+
+  book.read = !book.read;
+  const bookClass = book.read ? 'btn btn-success' : 'btn btn-danger';
+  const buttonContent = book.read ? 'Yes' : 'No';
+
+  el.className = bookClass;
+  el.innerHTML = buttonContent;
+}
+
+getRealtimeUpdates = () => {
+  collRef
+  .onSnapshot(querySnapshot => {
+    querySnapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        myLibrary.push(change.doc.data());
+      }
+      if (change.type === "modified") {
+        console.log("Modified city: ", change.doc.data());
+      }
+      if (change.type === "removed") {
+        console.log("Removed city: ", change.doc.data());
+      }
+    });
+    render();
+  });
+}
+
+window.onload = function () { // eslint-disable-line func-names
+  getRealtimeUpdates();
+};
